@@ -77,9 +77,8 @@ async def generate_ideas(request: IdeaRequest):
         
         print("📤 Отправляем запрос к OpenAI...")
         
-        # НОВЫЙ СИНТАКСИС для OpenAI v1.3.0
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
+        # СТАРЫЙ СИНТАКСИС для OpenAI v0.28.1
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Ты креативный директор. Создавай краткие, креативные идеи для рекламы."},
@@ -97,13 +96,13 @@ async def generate_ideas(request: IdeaRequest):
         
         return {"ideas": ideas[:request.num_ideas], "status": "success"}
         
-    except openai.AuthenticationError as e:
+    except openai.error.AuthenticationError as e:
         print(f"❌ Ошибка аутентификации OpenAI: {e}")
         raise HTTPException(status_code=401, detail=f"Invalid OpenAI API key: {str(e)}")
-    except openai.RateLimitError as e:
+    except openai.error.RateLimitError as e:
         print(f"❌ Лимит запросов OpenAI: {e}")
         raise HTTPException(status_code=429, detail=f"OpenAI rate limit exceeded: {str(e)}")
-    except openai.APIError as e:
+    except openai.error.APIError as e:
         print(f"❌ Ошибка API OpenAI: {e}")
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
     except Exception as e:
@@ -116,11 +115,10 @@ async def generate_ideas(request: IdeaRequest):
 async def generate_images(request: ImageRequest):
     try:
         generated_images = []
-        client = openai.OpenAI()
         
         for i, idea in enumerate(request.ideas[:request.num_images]):
             try:
-                response = client.images.generate(
+                response = openai.Image.create(
                     model="dall-e-3",
                     prompt=f"Создай рекламное изображение для креатива: {idea}. Стиль: профессиональная реклама, яркие цвета, метафорическая визуализация. Минимальный текст на изображении.",
                     size="1024x1024",
@@ -148,7 +146,3 @@ async def generate_images(request: ImageRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка генерации изображений: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
