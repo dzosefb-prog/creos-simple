@@ -4,9 +4,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 import openai
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(title="Creos AI API", version="1.0.0")
 
