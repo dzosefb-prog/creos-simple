@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 
-const API_BASE_URL = 'https://creos-backend.onrender.com';
+const API_BASE_URL = 'https://creos-simple.onrender.com'
 
 function App() {
   const [step, setStep] = useState(1)
@@ -51,6 +51,14 @@ function App() {
     )
   }
 
+  const selectAllIdeas = () => {
+    setSelectedIdeas(ideas)
+  }
+
+  const deselectAllIdeas = () => {
+    setSelectedIdeas([])
+  }
+
   const generateImages = async () => {
     if (selectedIdeas.length === 0) {
       alert('Выберите хотя бы одну идею!')
@@ -61,7 +69,7 @@ function App() {
     try {
       const response = await axios.post(`${API_BASE_URL}/generate-images`, {
         ideas: selectedIdeas,
-        num_images: selectedIdeas.length
+        num_images: Math.min(selectedIdeas.length, 30)
       })
       setImages(response.data.images)
       setStep(3)
@@ -71,39 +79,103 @@ function App() {
     setLoading(false)
   }
 
+  // Компонент прогресс-бара
+  const ProgressSteps = ({ currentStep }) => (
+    <div className="progress-steps">
+      {[
+        { number: 1, label: 'Описание продукта' },
+        { number: 2, label: 'Выбор идей' },
+        { number: 3, label: 'Готовые креативы' }
+      ].map(step => (
+        <div key={step.number} className="progress-step">
+          <div className={`step-number ${step.number === currentStep ? 'active' : ''}`}>
+            {step.number}
+          </div>
+          <div className={`step-label ${step.number === currentStep ? 'active' : ''}`}>
+            {step.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <div className="app">
+      {/* Хедер */}
       <header className="header">
-        <h1>🎨 Creos: AI Product Image Generator</h1>
-        <p>Создавайте креативы для рекламы за минуты</p>
+        <div className="header-content">
+          <div className="logo">
+            <div className="logo-icon">C</div>
+            Creos
+          </div>
+          <nav className="nav-links">
+            <a href="#features" className="nav-link">Возможности</a>
+            <a href="#pricing" className="nav-link">Тарифы</a>
+            <a href="#about" className="nav-link">О нас</a>
+            <button className="cta-button">Начать бесплатно</button>
+          </nav>
+        </div>
       </header>
 
+      {/* Герой-секция */}
+      <section className="hero">
+        <div className="hero-content">
+          <h1>AI генератор креативов для рекламы</h1>
+          <p>Создавайте продающие изображения для Meta, Google, VK и Яндекс.Директ с помощью искусственного интеллекта</p>
+        </div>
+      </section>
+
       <div className="container">
+        <ProgressSteps currentStep={step} />
+
         {step === 1 && (
           <div className="step">
-            <h2>📝 Описание продукта</h2>
+            <h2>
+              <div className="step-icon">📝</div>
+              Описание вашего продукта
+            </h2>
             <div className="form">
-              {Object.keys(productData).map(field => (
-                <div key={field} className="input-group">
-                  <label>
-                    {field.split('_').map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ')}:
-                  </label>
+              {[
+                { key: 'product_name', label: 'Название продукта', placeholder: 'Введите название вашего продукта или услуги...' },
+                { key: 'core_problem', label: 'Основная проблема', placeholder: 'Какую проблему решает ваш продукт?' },
+                { key: 'primary_benefit', label: 'Главное преимущество', placeholder: 'Основное преимущество для клиента...' },
+                { key: 'visual_elements', label: 'Визуальные элементы', placeholder: 'Ключевые цвета, стиль, элементы бренда...' },
+                { key: 'target_audience', label: 'Целевая аудитория', placeholder: 'Кто ваши идеальные клиенты?' },
+                { key: 'unique_mechanism', label: 'Уникальное предложение', placeholder: 'Что делает ваш продукт особенным?' },
+                { key: 'emotional_benefit', label: 'Эмоциональная выгода', placeholder: 'Какие эмоции вызывает продукт?' },
+                { key: 'brand_personality', label: 'Личность бренда', placeholder: 'Стиль общения, ценности бренда...' },
+                { key: 'headline', label: 'Заголовок', placeholder: 'Основной заголовок для рекламы...' }
+              ].map(field => (
+                <div key={field.key} className="input-group">
+                  <label>{field.label}</label>
                   <input
                     type="text"
-                    value={productData[field]}
-                    onChange={(e) => handleInputChange(field, e.target.value)}
-                    placeholder={`Введите ${field.replace('_', ' ')}...`}
+                    value={productData[field.key]}
+                    onChange={(e) => handleInputChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
                   />
                 </div>
               ))}
+              
               <button 
                 onClick={generateIdeas} 
-                disabled={loading}
+                disabled={loading || !productData.product_name.trim()}
                 className="generate-btn"
               >
-                {loading ? 'Генерация...' : 'Generate Creative Briefs →'}
+                {loading ? (
+                  <>
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    Генерация идей...
+                  </>
+                ) : (
+                  <>
+                    Сгенерировать идеи →
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -111,7 +183,23 @@ function App() {
 
         {step === 2 && (
           <div className="step">
-            <h2>💡 Выберите идеи для генерации ({selectedIdeas.length} выбрано)</h2>
+            <h2>
+              <div className="step-icon">💡</div>
+              Выберите идеи для генерации
+              <span style={{fontSize: '1rem', color: 'var(--gray-600)', marginLeft: '1rem'}}>
+                ({selectedIdeas.length} из {ideas.length} выбрано)
+              </span>
+            </h2>
+
+            <div className="actions" style={{justifyContent: 'flex-start', marginBottom: '2rem'}}>
+              <button onClick={selectAllIdeas} className="back-btn" style={{background: 'var(--secondary)'}}>
+                Выбрать все
+              </button>
+              <button onClick={deselectAllIdeas} className="back-btn" style={{background: 'var(--gray-500)'}}>
+                Сбросить
+              </button>
+            </div>
+
             <div className="ideas-grid">
               {ideas.map((idea, index) => (
                 <div 
@@ -123,21 +211,33 @@ function App() {
                     {idea}
                   </div>
                   <div className="idea-checkbox">
-                    {selectedIdeas.includes(idea) ? '✓' : '+'}
+                    {selectedIdeas.includes(idea) ? '✓' : ''}
                   </div>
                 </div>
               ))}
             </div>
+
             <div className="actions">
               <button onClick={() => setStep(1)} className="back-btn">
-                ← Назад
+                ← Назад к описанию
               </button>
               <button 
                 onClick={generateImages} 
                 disabled={loading || selectedIdeas.length === 0}
                 className="generate-btn"
               >
-                {loading ? 'Генерация изображений...' : `Generate Images (${selectedIdeas.length}) →`}
+                {loading ? (
+                  <>
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    Генерация изображений...
+                  </>
+                ) : (
+                  `Создать ${selectedIdeas.length} изображений →`
+                )}
               </button>
             </div>
           </div>
@@ -145,7 +245,20 @@ function App() {
 
         {step === 3 && (
           <div className="step">
-            <h2>🖼️ Готовые изображения ({images.length})</h2>
+            <h2>
+              <div className="step-icon">🎨</div>
+              Готовые рекламные креативы
+              <span style={{fontSize: '1rem', color: 'var(--gray-600)', marginLeft: '1rem'}}>
+                ({images.length} изображений)
+              </span>
+            </h2>
+
+            {images.length > 0 && (
+              <div className="success-message">
+                ✅ Успешно сгенерировано {images.length} креативов
+              </div>
+            )}
+
             <div className="images-grid">
               {images.map((image, index) => (
                 <div key={index} className="image-card">
@@ -163,17 +276,42 @@ function App() {
                 </div>
               ))}
             </div>
+
             <div className="actions">
               <button onClick={() => setStep(2)} className="back-btn">
                 ← Сгенерировать еще
               </button>
-              <button onClick={() => setStep(1)} className="generate-btn">
-                🎨 Новый продукт
+              <button onClick={() => {
+                setStep(1)
+                setProductData({
+                  product_name: '',
+                  core_problem: '',
+                  primary_benefit: '',
+                  visual_elements: '',
+                  target_audience: '',
+                  unique_mechanism: '',
+                  emotional_benefit: '',
+                  brand_personality: '',
+                  headline: ''
+                })
+                setIdeas([])
+                setSelectedIdeas([])
+                setImages([])
+              }} className="generate-btn">
+                🚀 Новый продукт
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Футер */}
+      <footer className="footer">
+        <div className="footer-content">
+          <p>© 2024 Creos. AI генератор креативов для рекламы</p>
+          <p>Создано с помощью искусственного интеллекта</p>
+        </div>
+      </footer>
     </div>
   )
 }
