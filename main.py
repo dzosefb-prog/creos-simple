@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from typing import List, Optional
 import openai
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Creos AI API", version="1.0.0")
 
@@ -108,3 +111,44 @@ async def generate_ideas(request: IdeaRequest):
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/generate-images")
+async def generate_images(request: ImageRequest):
+    try:
+        generated_images = []
+        client = openai.OpenAI()
+        
+        for i, idea in enumerate(request.ideas[:request.num_images]):
+            try:
+                response = client.images.generate(
+                    model="dall-e-3",
+                    prompt=f"Создай рекламное изображение для креатива: {idea}. Стиль: профессиональная реклама, яркие цвета, метафорическая визуализация. Минимальный текст на изображении.",
+                    size="1024x1024",
+                    quality="standard",
+                    n=1
+                )
+                
+                image_url = response.data[0].url
+                generated_images.append({
+                    "id": i + 1,
+                    "idea": idea,
+                    "image_url": image_url,
+                    "formats": {
+                        "1:1": image_url,
+                        "9:16": image_url,
+                        "16:9": image_url
+                    }
+                })
+                
+            except Exception as e:
+                print(f"Ошибка генерации изображения {i+1}: {str(e)}")
+                continue
+        
+        return {"images": generated_images, "status": "success"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка генерации изображений: {str(e)}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
