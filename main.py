@@ -74,8 +74,10 @@ async def generate_ideas(request: IdeaRequest):
         
         print("📤 Отправляем запрос к OpenAI...")
         
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Сначала попробуем более дешевую модель
+        # НОВЫЙ СИНТАКСИС для OpenAI v1.3.0
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Ты креативный директор. Создавай краткие, креативные идеи для рекламы."},
                 {"role": "user", "content": prompt}
@@ -92,13 +94,13 @@ async def generate_ideas(request: IdeaRequest):
         
         return {"ideas": ideas[:request.num_ideas], "status": "success"}
         
-    except openai.error.AuthenticationError as e:
+    except openai.AuthenticationError as e:
         print(f"❌ Ошибка аутентификации OpenAI: {e}")
         raise HTTPException(status_code=401, detail=f"Invalid OpenAI API key: {str(e)}")
-    except openai.error.RateLimitError as e:
+    except openai.RateLimitError as e:
         print(f"❌ Лимит запросов OpenAI: {e}")
         raise HTTPException(status_code=429, detail=f"OpenAI rate limit exceeded: {str(e)}")
-    except openai.error.APIError as e:
+    except openai.APIError as e:
         print(f"❌ Ошибка API OpenAI: {e}")
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
     except Exception as e:
