@@ -20,6 +20,8 @@ function App() {
   const [ideas, setIdeas] = useState([])
   const [selectedIdeas, setSelectedIdeas] = useState([])
   const [images, setImages] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedPlatform, setSelectedPlatform] = useState('')
 
   const handleInputChange = (field, value) => {
     setProductData(prev => ({
@@ -98,6 +100,45 @@ function App() {
       ))}
     </div>
   )
+  
+  const CategoryPlatformSelector = () => (
+  <div className="category-platform-section">
+    <h3>🎯 Настройки генерации</h3>
+    
+    <div className="selector-grid">
+      <div className="input-group">
+        <label>Категория бизнеса *</label>
+        <select 
+          value={selectedCategory} 
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="category-select"
+        >
+          <option value="">Выберите категорию</option>
+          <option value="ecommerce">🛒 Интернет-магазин</option>
+          <option value="mobile_apps">📱 Мобильное приложение</option>
+          <option value="edtech">🎓 Образовательный проект</option>
+          <option value="services">💼 Услуги</option>
+          <option value="infobusiness">📈 Инфобизнес</option>
+        </select>
+      </div>
+
+      <div className="input-group">
+        <label>Рекламная платформа *</label>
+        <select 
+          value={selectedPlatform} 
+          onChange={(e) => setSelectedPlatform(e.target.value)}
+          className="platform-select"
+        >
+          <option value="">Выберите платформу</option>
+          <option value="vk_ads">VK Реклама (текст {'<20%'})</option>
+          <option value="meta_ads">Meta (Facebook/Instagram)</option>
+          <option value="google_ads">Google Реклама</option>
+          <option value="yandex_direct">Яндекс.Директ</option>
+        </select>
+      </div>
+    </div>
+  </div>
+)
 
   return (
     <div className="app">
@@ -134,6 +175,7 @@ function App() {
               <div className="step-icon">📝</div>
               Описание вашего продукта
             </h2>
+            <CategoryPlatformSelector />
             <div className="form">
               {[
                 { key: 'product_name', label: 'Название продукта', placeholder: 'Введите название вашего продукта или услуги...' },
